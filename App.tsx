@@ -8,7 +8,7 @@
 import React, { useState } from "react";
 import {
   ScrollView,
-  useColorScheme,
+  // useColorScheme,
   View,
   StyleSheet, Text
 } from "react-native";
