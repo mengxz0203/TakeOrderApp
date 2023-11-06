@@ -5,59 +5,103 @@
  * @format
  */
 
-import React, {useState} from 'react';
+import React, { useState } from "react";
 import {
-  SafeAreaView,
   ScrollView,
-  StatusBar,
   useColorScheme,
   View,
-  TextInput,
-  Button,
-  StyleSheet,
-} from 'react-native';
+  StyleSheet, Text
+} from "react-native";
 
-import {Colors, Header} from 'react-native/Libraries/NewAppScreen';
+import cheerio from "cheerio";
+import { List, WhiteSpace, Button } from "@ant-design/react-native";
+import axios from "axios";
+
+interface Food {
+  foodName: string;
+  foodIngredients: string;
+  foodHref: string;
+}
 
 const App = () => {
-  const isDarkMode = useColorScheme() === 'dark';
+  // const isDarkMode = useColorScheme() === 'dark';
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [data, setData] = useState<Food[]>([])
+  const [loading, setLoading] = useState(false);
 
-  const handleNameChange = (text: React.SetStateAction<string>) => {
-    setName(text);
-  };
-
-  const handleEmailChange = (text: React.SetStateAction<string>) => {
-    setEmail(text);
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setLoading(true)
     // 处理提交逻辑
-    console.log('Name:', name);
-    console.log('Email:', email);
+    const foodsList: Food[] = [];
+    for (let i = 1; i <= 20; i++) {
+      const url = `https://www.xiachufang.com/explore/?page=${i}`;
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36',
+          },
+        });
+
+        const $ = cheerio.load(response.data);
+        const inf = $('.recipe.recipe-215-horizontal.pure-g.image-link.display-block');
+
+        inf.each((index, element) => {
+          const foodName = $(element).find('img').attr('alt');
+          const foodIngredients = $(element).find('p.ing.ellipsis').text();
+          const foodHref = `https://www.xiachufang.com/${$(element).find('a').attr('href')}`;
+          foodsList.push({ foodName, foodIngredients, foodHref } as Food);
+          // console.log(`菜名: ${foodName}\n用料: ${foodIngredients}\n链接: ${foodHref}\n`);
+        });
+      } catch (error) {
+        console.error(error);
+        setLoading(false)
+      }
+    }
+
+    console.log(foodsList);
+
+    setData(foodsList)
+    setLoading(false)
   };
 
   return (
-    <SafeAreaView>
+    <View>
 
-      <View style={styles.container}>
-        <TextInput
-          style={styles.input}
-          placeholder="Name"
-          value={name}
-          onChangeText={handleNameChange}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={handleEmailChange}
-        />
-        <Button title="Submit" onPress={handleSubmit} />
+      <View>
+        <WhiteSpace size={'xl'} />
+        <WhiteSpace size={'xl'} />
       </View>
-    </SafeAreaView>
+
+      <ScrollView style={styles.scrollView}>
+
+        <List renderHeader={'每周最受欢迎菜谱'}>
+         {data.map(item => (
+            <View key={item.foodHref} style={styles.listItem}>
+              <Text>{item.foodName}</Text>
+            </View>
+          ))}
+        </List>
+
+      </ScrollView>
+
+      <View>
+        <WhiteSpace size={'xl'} />
+      </View>
+
+      <View>
+        <Button
+          type={"primary"}
+          onPress={handleSubmit}
+          loading={loading}
+        >
+          查询
+        </Button>
+        <WhiteSpace />
+      </View>
+
+    </View>
+
   );
 };
 
@@ -75,6 +119,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 16,
     paddingHorizontal: 8,
+  },
+  scrollView: {
+    maxHeight: 500, // 设置最大高度
+  },
+  listItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'gray',
   },
 });
 
