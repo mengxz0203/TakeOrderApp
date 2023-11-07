@@ -5,29 +5,77 @@
  * @format
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
-  // useColorScheme,
   View,
-  StyleSheet, Text
+  StyleSheet, Text, FlatList, Dimensions, TouchableOpacity, Linking
 } from "react-native";
 
 import cheerio from "cheerio";
-import { List, WhiteSpace, Button } from "@ant-design/react-native";
+import { Button, ThemeProvider } from "@rneui/themed"
 import axios from "axios";
+import { Card, Divider, Header } from "@rneui/base";
+import LinearGradient from 'react-native-linear-gradient'
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 interface Food {
   foodName: string;
+  foodImg: string
   foodIngredients: string;
   foodHref: string;
 }
 
-const App = () => {
-  // const isDarkMode = useColorScheme() === 'dark';
+const { width } = Dimensions.get('window');
+const cardWidth = width / 2 - 30;
 
-  const [data, setData] = useState<Food[]>([])
+const validateURL = (url: string) => {
+  const doubleSlashRegex = /([^:]\/)\/+/g;
+  return url.replace(doubleSlashRegex, '$1');
+}
+
+const App = () => {
+
+  // const [data, setData] = useState<Food[]>([])
   const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<Food[]>([])
+  const [randomData, setRandomData] = useState<Food>()
+  const [disabled, setDisabled] = useState(true)
+
+  useEffect(() => {
+    if (data.length == 0) {
+      setDisabled(true)
+    } else {
+      setDisabled(false)
+    }
+  }, [data]);
+  const handleCardPress = (href: string) => {
+    console.log(href)
+    const new_url = validateURL(href)
+    console.log(new_url)
+    Linking.openURL(new_url)
+      .catch((error) => {
+        // 处理打开链接失败的情况
+        console.error('Failed to open URL:', error);
+      });
+  };
+
+  const renderCard = ({ item }: { item: Food }) => {
+    return (
+      <TouchableOpacity onPress={() => handleCardPress(item.foodHref)}>
+        <Card containerStyle={styles.card}>
+          <Card.Title>{item.foodName}</Card.Title>
+          <Card.Divider />
+          <Card.Image
+            source={{ uri: item.foodImg }}
+            // style={{ resizeMode: "contain"}}
+
+          />
+
+        </Card>
+      </TouchableOpacity>
+    );
+  };
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -48,9 +96,10 @@ const App = () => {
 
         inf.each((index, element) => {
           const foodName = $(element).find('img').attr('alt');
+          const foodImg = $(element).find('img').attr('data-src')
           const foodIngredients = $(element).find('p.ing.ellipsis').text();
           const foodHref = `https://www.xiachufang.com/${$(element).find('a').attr('href')}`;
-          foodsList.push({ foodName, foodIngredients, foodHref } as Food);
+          foodsList.push({ foodName, foodImg, foodIngredients, foodHref } as Food);
           // console.log(`菜名: ${foodName}\n用料: ${foodIngredients}\n链接: ${foodHref}\n`);
         });
       } catch (error) {
@@ -59,74 +108,121 @@ const App = () => {
       }
     }
 
-    console.log(foodsList);
+    // console.log(foodsList);
 
     setData(foodsList)
     setLoading(false)
   };
 
+  const handleRandom = async () => {
+    setRandomData(data[Math.floor(Math.random() * data.length)])
+  }
+
   return (
-    <View>
+    <SafeAreaProvider>
+      <Header
+        ViewComponent={LinearGradient} // Don't forget this!
+        linearGradientProps={{
+          colors: ['white', 'pink'],
+          start: { x: 0, y: 0.5 },
+          end: { x: 1, y: 0.5 },
 
-      <View>
-        <WhiteSpace size={'xl'} />
-        <WhiteSpace size={'xl'} />
-      </View>
+        }}
+        containerStyle={{ height: 60 }}
+      />
+      <View style={{ flex: 1, flexDirection: "column"}}>
+        <View
 
-      <ScrollView style={styles.scrollView}>
-
-        <List renderHeader={'每周最受欢迎菜谱'}>
-         {data.map(item => (
-            <View key={item.foodHref} style={styles.listItem}>
-              <Text>{item.foodName}</Text>
-            </View>
-          ))}
-        </List>
-
-      </ScrollView>
-
-      <View>
-        <WhiteSpace size={'xl'} />
-      </View>
-
-      <View>
-        <Button
-          type={"primary"}
-          onPress={handleSubmit}
-          loading={loading}
+          style={{  padding: 10, flex: 1.8 }}
         >
-          查询
-        </Button>
-        <WhiteSpace />
-      </View>
+          <Text
+            style={{fontSize: 15, textAlign: 'center', fontWeight: 'bold', fontFamily: 'Arial' }}
+          >
+            下厨房本周最受欢迎菜谱
+          </Text>
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item.foodName}
+            numColumns={2}
+            renderItem={renderCard}
+            contentContainerStyle={styles.cardContainer}
+          />
 
-    </View>
+        </View>
+        <Divider
+          style={{margin: 10}}
+        />
+        <View
+          style={{ flex: 1.2, padding: 10 }}
+        >
+          <Text
+            style={{fontSize: 15, textAlign: 'center', fontWeight: 'bold', fontFamily: 'Arial' }}
+          >
+            幸运星
+          </Text>
+          {randomData && (<TouchableOpacity onPress={() => handleCardPress(randomData.foodHref)}>
+            <Card>
+              <Card.Title>{randomData.foodName}</Card.Title>
+              <Card.Divider />
+              <Card.Image source={{ uri: randomData.foodImg }} />
+              <Card.Divider />
+              {/*<Card.FeaturedSubtitle>{item.foodHref}</Card.FeaturedSubtitle>*/}
+            </Card>
+          </TouchableOpacity>)}
+
+        </View>
+        <View style={styles.buttonContainer}>
+          <Button
+            // style={styles.button}
+            color={"#ffb6c1"}
+            title={"查询"}
+            type={"solid"}
+            loading={loading}
+            buttonStyle={{ width: 150 }}
+            onPress={handleSubmit}
+          />
+          <Button
+            // style={styles.button}
+            color={"#ffb6c1"}
+            title={"摇骰子"}
+            type={"solid"}
+            buttonStyle={{width: 150}}
+            onPress={handleRandom}
+            disabled={disabled}
+          />
+        </View>
+      </View>
+    </SafeAreaProvider>
+
 
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+const styles= StyleSheet.create({
+  heading: {
+    height: 10
+  },
+  buttonContainer: {
+    flex: 0.5,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    marginLeft: 10,
+    marginRight: 10
+  },
+  button: {
+    // flex: 1,
+    // marginRight: 10,
+    color: "#ffb6c1"
+  },
+  cardContainer: {
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
   },
-  input: {
-    width: '100%',
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 16,
-    paddingHorizontal: 8,
-  },
-  scrollView: {
-    maxHeight: 500, // 设置最大高度
-  },
-  listItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'gray',
+  card: {
+    width: cardWidth,
+    margin: 10,
+    // height: 200
   },
 });
 
