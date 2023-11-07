@@ -7,13 +7,12 @@
 
 import React, { useEffect, useState } from "react";
 import {
-  ScrollView,
   View,
   StyleSheet, Text, FlatList, Dimensions, TouchableOpacity, Linking
 } from "react-native";
 
 import cheerio from "cheerio";
-import { Button, ThemeProvider } from "@rneui/themed"
+import { Button } from "@rneui/themed"
 import axios from "axios";
 import { Card, Divider, Header } from "@rneui/base";
 import LinearGradient from 'react-native-linear-gradient'
@@ -130,9 +129,8 @@ const App = () => {
         }}
         containerStyle={{ height: 60 }}
       />
-      <View style={{ flex: 1, flexDirection: "column"}}>
+      <View style={{ flex: 9, flexDirection: "column"}}>
         <View
-
           style={{  padding: 10, flex: 1.8 }}
         >
           <Text
@@ -153,44 +151,47 @@ const App = () => {
           style={{margin: 10}}
         />
         <View
-          style={{ flex: 1.2, padding: 10 }}
+          style={{ flex: 1.2, padding: 10 ,marginBottom: 60}}
         >
           <Text
             style={{fontSize: 15, textAlign: 'center', fontWeight: 'bold', fontFamily: 'Arial' }}
           >
             幸运星
           </Text>
-          {randomData && (<TouchableOpacity onPress={() => handleCardPress(randomData.foodHref)}>
-            <Card>
-              <Card.Title>{randomData.foodName}</Card.Title>
-              <Card.Divider />
-              <Card.Image source={{ uri: randomData.foodImg }} />
-              <Card.Divider />
-              {/*<Card.FeaturedSubtitle>{item.foodHref}</Card.FeaturedSubtitle>*/}
-            </Card>
-          </TouchableOpacity>)}
+          <View style={styles.randomCardContainer}>
+            {randomData && (<TouchableOpacity onPress={() => handleCardPress(randomData.foodHref)}>
+              <Card>
+                <Card.Title>{randomData.foodName}</Card.Title>
+                <Card.Divider />
+                <Card.Image source={{ uri: randomData.foodImg }} />
+                <Card.Divider />
+                {/*<Card.FeaturedSubtitle>{item.foodHref}</Card.FeaturedSubtitle>*/}
+              </Card>
+            </TouchableOpacity>)}
+          </View>
 
         </View>
-        <View style={styles.buttonContainer}>
-          <Button
-            // style={styles.button}
-            color={"#ffb6c1"}
-            title={"查询"}
-            type={"solid"}
-            loading={loading}
-            buttonStyle={{ width: 150 }}
-            onPress={handleSubmit}
-          />
-          <Button
-            // style={styles.button}
-            color={"#ffb6c1"}
-            title={"摇骰子"}
-            type={"solid"}
-            buttonStyle={{width: 150}}
-            onPress={handleRandom}
-            disabled={disabled}
-          />
-        </View>
+
+      </View>
+      <View style={styles.buttonContainer}>
+        <Button
+          // style={styles.button}
+          color={"#ffb6c1"}
+          title={"查询"}
+          type={"solid"}
+          loading={loading}
+          buttonStyle={{ width: 150 }}
+          onPress={handleSubmit}
+        />
+        <Button
+          // style={styles.button}
+          color={"#ffb6c1"}
+          title={"摇骰子"}
+          type={"solid"}
+          buttonStyle={{width: 150}}
+          onPress={handleRandom}
+          disabled={disabled}
+        />
       </View>
     </SafeAreaProvider>
 
@@ -203,13 +204,13 @@ const styles= StyleSheet.create({
     height: 10
   },
   buttonContainer: {
-    flex: 0.5,
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-    marginLeft: 10,
-    marginRight: 10
+    justifyContent: "space-around",
+    marginBottom: 20,
+    // marginTop: 10
+    // marginBottom: 10,
+    // marginLeft: 10,
+    // marginRight: 10
   },
   button: {
     // flex: 1,
@@ -223,6 +224,10 @@ const styles= StyleSheet.create({
     width: cardWidth,
     margin: 10,
     // height: 200
+  },
+  randomCardContainer: {
+    flex: 1,
+    marginBottom: 10,
   },
 });
 
